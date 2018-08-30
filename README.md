@@ -206,6 +206,12 @@ This plugin accept a series of options.
 - **reference_fields**: The field to reference for a scoped counter. Optional
 - **disable_hooks**: If true, the counter will not be incremented on saving a new document. Default to `false`
 - **collection_name**: By default the collection name to mantain the status of the counters is `counters`. You can override it using this option
+- **exclusive** : By default, all sequences are exclusive for the schema where has been defined. In order to share the counter's sequence with multiple schemas, set ```exclusive``` to false on all schemas.
+
+```js
+schema.plugin(AutoIncrement, {id: 'shared-counter', exclusive: false});
+```
+
 
 ## Notes
 

@@ -1,3 +1,7 @@
+# 4.0.2
+
+- Added option `exclusive` (true by default) to the sequence definition.
+
 # 4.0.0
 
 - Fix: Do not hang on save in production anymore
