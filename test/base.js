@@ -165,7 +165,6 @@ describe('Basic => ', function () {
                 );
             });
 
-
             it('updating a document do not increment the counter', function (done) {
                 this.SimpleField.findOne({}, function (err, entity) {
                     var id = entity.id;
@@ -237,7 +236,6 @@ describe('Basic => ', function () {
                     });
                 });
             });
-
         });
 
         describe('a manual increment field => ', function () {
@@ -392,70 +390,45 @@ describe('Basic => ', function () {
 
             });
 
-            describe('Two schema with the samere references', function () {
+            describe('Two schemas with the same references', function () {
 
                 before(function createTwoSchemas() {
-                    var RefFirstSchema = new Schema({
+                    var schemaDef = {
                         country: String,
                         city: String,
                         inhabitant: Number
-                    });
-                    RefFirstSchema.plugin(AutoIncrement, { id: 'shared_inhabitant_counter', inc_field: 'inhabitant', reference_fields: ['country', 'city'] });
-                    this.RefFirst = mongoose.model('RefFirst', RefFirstSchema);
+                    }
 
-                    var RefSecondSchema = new Schema({
-                        country: String,
-                        city: String,
-                        inhabitant: Number
-                    });
-                    RefSecondSchema.plugin(AutoIncrement, { id: 'shared_inhabitant_counter_2', inc_field: 'inhabitant', reference_fields: ['country', 'city'] });
-                    this.RefSecond = mongoose.model('RefSecond', RefSecondSchema);
+                    var defaultOptions = {
+                        inc_field: 'inhabitant',
+                        reference_fields: ['country', 'city']
+                    }
 
-                    this.FirstSimple = mongoose.model('FirstSimple', new Schema({
-                        _id: Number,
-                        name: String
-                    }).plugin(AutoIncrement, { id: "mySharedCounter", exclusive: false }));
+                    function createSchema(modelName, srcOptions) {
+                        var options = Object.assign(srcOptions, defaultOptions);
+                        var schema = new Schema(schemaDef);
+                        schema.plugin(AutoIncrement, options);
+                        return mongoose.model(modelName, schema);
+                    }
 
-                    this.SecondSimple = mongoose.model('SecondSimple', new Schema({
-                        _id: Number,
-                        name: String
-                    }).plugin(AutoIncrement, { id: "mySharedCounter", exclusive: false }));
+                    this.RefFirst = createSchema("RefFirst", { id: "inhabitant_counter_1" });
+                    this.RefSecond = createSchema("RefSecond", { id: "inhabitant_counter_2" });
                 });
 
-                it('by default do not share the same counter', function (done) {
+                it('do not share the same counter', async function (done) {
                     var t = new this.RefFirst({ country: 'France', city: 'Paris' });
                     var t2 = new this.RefSecond({ country: 'France', city: 'Paris' });
-                    t.save(function (err) {
-                        if (err) return done(err);
-                        assert.equal(t.inhabitant, 1);
-                        t2.save(function (err) {
-                            if (err) return done(err);
-                            assert.equal(t2.inhabitant, 1);
-                            done();
-                        });
-                    });
-                });
-
-                it('do share the same counter if option exlusive is set to False ', async function (done) {
-                    var t = new this.FirstSimple({ name: "name" });
-                    var t2 = new this.SecondSimple({ name: "name" });
                     try {
                         await t.save();
-                        assert.equal(t._id, 1);
-                    } catch (error) {
-                        return done(error);
-                    }
-                    try {
                         await t2.save();
-                        assert.equal(t2._id, 2);
+                        assert.equal(t2.inhabitant, 1);
+                        assert.equal(t.inhabitant, 1);
+                        return done();
                     } catch (error) {
                         return done(error);
                     }
-
-                    return done();
                 });
             });
-
         });
 
         describe('Reset counter => ', function () {
@@ -654,14 +627,6 @@ describe('Basic => ', function () {
                     });
                 });
             });
-        });
-
-    });
-
-    describe('thows error on invalid mongoose instance', () => {
-        assert.throws(() => {
-            //var _autoIncrement = require('../index')(undefined);
-            require('../index')(undefined);
         });
     });
 });
